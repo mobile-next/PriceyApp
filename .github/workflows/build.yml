@@ -23,7 +23,7 @@ jobs:
 
     - name: Build app
       run: |
-        xcodebuild -scheme pricey -configuration Release -derivedDataPath build clean build
+        xcodebuild -scheme Pricey -configuration Release -derivedDataPath build clean build
         
     - name: Create app bundle
       run: |
@@ -40,7 +40,7 @@ jobs:
         ln -sf /Applications dmg_contents/Applications
         
         # Create the DMG
-        hdiutil create -volname "pricey" -srcfolder dmg_contents -ov -format UDZO pricey.dmg
+        hdiutil create -volname "Pricey" -srcfolder dmg_contents -ov -format UDZO Pricey.dmg
         
     - name: Upload DMG as artifact
       uses: actions/upload-artifact@v4
