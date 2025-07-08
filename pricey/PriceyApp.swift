@@ -606,42 +606,8 @@ class SettingsWindowController: NSWindowController {
 	}
 	
 	private func isLaunchAtStartupEnabled() -> Bool {
-		guard let bundleIdentifier = Bundle.main.bundleIdentifier else {
-			return false
-		}
-		
-		// Use the newer macOS 13+ API if available
-		if #available(macOS 13.0, *) {
-			let service = SMAppService.mainApp
-			return service.status == .enabled
-		} else {
-			// Fallback for older macOS versions
-			return checkLoginItemsLegacy(bundleIdentifier: bundleIdentifier)
-		}
-	}
-	
-	private func checkLoginItemsLegacy(bundleIdentifier: String) -> Bool {
-		// For older macOS versions, we'll use a combination approach
-		// Check if we can find our app in the login items through LaunchServices
-		let workspace = NSWorkspace.shared
-		
-		// Get login items using the legacy approach
-		let script = """
-		tell application "System Events"
-			get the name of every login item
-		end tell
-		"""
-		
-		var error: NSDictionary?
-		if let scriptObject = NSAppleScript(source: script) {
-			if let output = scriptObject.executeAndReturnError(&error) {
-				let loginItems = output.stringValue ?? ""
-				let appName = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "pricey"
-				return loginItems.contains(appName)
-			}
-		}
-		
-		// If AppleScript fails, fall back to UserDefaults as last resort
-		return UserDefaults.standard.bool(forKey: "LaunchAtStartup")
+		let service = SMAppService.mainApp
+		return service.status == .enabled
 	}
 }
+
