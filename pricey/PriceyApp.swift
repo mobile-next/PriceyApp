@@ -29,6 +29,12 @@ struct PriceyApp: App {
 			EmptyView()
 		}
 	}
+	
+	static func getMidnightToday() -> Date {
+		let calendar = Calendar.current
+		let today = Date()
+		return calendar.startOfDay(for: today)
+	}
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -37,6 +43,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	var updateTimer: Timer?
 	var animatedTotalCost: AnimatedDouble!
 	var animatedClaudeCost: AnimatedDouble!
+	var timestampThreshold: Date = PriceyApp.getMidnightToday()
 	static var fileCache: [String: FileCacheEntry] = [:]
 	
 	func applicationDidFinishLaunching(_ notification: Notification) {
@@ -72,7 +79,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 	
 	@objc func statusBarButtonClicked() {
-		// Menu will show automatically
 	}
 	
 	func updateStatusBarTitle() {
@@ -130,6 +136,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		costTracker.reset()
 		animatedTotalCost.value = 0.0
 		animatedClaudeCost.value = 0.0
+		timestampThreshold = Date()
+		
+		// Clear cache to force re-reading with new timestamp threshold
+		AppDelegate.fileCache.removeAll()
 	}
 	
 	@objc func quitApp() {
@@ -175,11 +185,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		}
 		
 		var usageStat = UsageStat.zero
-		print("Reading file: \(filePath)")
+		// print("Reading file: \(filePath)")
 		
 		let dateFormatter = DateFormatter()
-		dateFormatter.dateFormat = "yyyy-MM-dd"
-		let todayPrefix = dateFormatter.string(from: Date()) + "T"
+		dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+		dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
 		
 		do {
 			let fileContent = try String(contentsOfFile: filePath, encoding: .utf8)
@@ -198,8 +208,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 								seenRequestIds.insert(requestId)
 							}
 							
-							if let timestamp = json["timestamp"] as? String,
-							   timestamp.starts(with: todayPrefix) {
+							if let timestampString = json["timestamp"] as? String,
+							   let timestamp = dateFormatter.date(from: timestampString),
+							   timestamp >= timestampThreshold {
 								
 								// Parse token usage data
 								var inputTokens: Int64 = 0
@@ -269,7 +280,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		let fileManager = FileManager.default
 		var totalUsageStat = UsageStat.zero
 		
-		print("Processing project directory: \(directoryPath)")
+		// print("Processing project directory: \(directoryPath)")
 		
 		do {
 			let projectContents = try fileManager.contentsOfDirectory(atPath: directoryPath)
