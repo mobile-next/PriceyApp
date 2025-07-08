@@ -7,13 +7,13 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		2DC043C72E1D0F9C00AA18EC /* pricey.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = pricey.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2DC043C72E1D0F9C00AA18EC /* Pricey.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pricey.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		2DC043C92E1D0F9C00AA18EC /* pricey */ = {
+		2DC043C92E1D0F9C00AA18EC /* Pricey */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = pricey;
+			path = Pricey;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -32,7 +32,7 @@
 		2DC043BE2E1D0F9C00AA18EC = {
 			isa = PBXGroup;
 			children = (
-				2DC043C92E1D0F9C00AA18EC /* pricey */,
+				2DC043C92E1D0F9C00AA18EC /* Pricey */,
 				2DC043C82E1D0F9C00AA18EC /* Products */,
 			);
 			sourceTree = "<group>";
@@ -40,7 +40,7 @@
 		2DC043C82E1D0F9C00AA18EC /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				2DC043C72E1D0F9C00AA18EC /* pricey.app */,
+				2DC043C72E1D0F9C00AA18EC /* Pricey.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,9 +48,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		2DC043C62E1D0F9C00AA18EC /* pricey */ = {
+		2DC043C62E1D0F9C00AA18EC /* Pricey */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 2DC043D62E1D0F9F00AA18EC /* Build configuration list for PBXNativeTarget "pricey" */;
+			buildConfigurationList = 2DC043D62E1D0F9F00AA18EC /* Build configuration list for PBXNativeTarget "Pricey" */;
 			buildPhases = (
 				2DC043C32E1D0F9C00AA18EC /* Sources */,
 				2DC043C42E1D0F9C00AA18EC /* Frameworks */,
@@ -61,13 +61,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				2DC043C92E1D0F9C00AA18EC /* pricey */,
+				2DC043C92E1D0F9C00AA18EC /* Pricey */,
 			);
-			name = pricey;
+			name = Pricey;
 			packageProductDependencies = (
 			);
 			productName = pricey;
-			productReference = 2DC043C72E1D0F9C00AA18EC /* pricey.app */;
+			productReference = 2DC043C72E1D0F9C00AA18EC /* Pricey.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -85,7 +85,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 2DC043C22E1D0F9C00AA18EC /* Build configuration list for PBXProject "pricey" */;
+			buildConfigurationList = 2DC043C22E1D0F9C00AA18EC /* Build configuration list for PBXProject "Pricey" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -99,7 +99,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				2DC043C62E1D0F9C00AA18EC /* pricey */,
+				2DC043C62E1D0F9C00AA18EC /* Pricey */,
 			);
 		};
 /* End PBXProject section */
@@ -302,7 +302,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		2DC043C22E1D0F9C00AA18EC /* Build configuration list for PBXProject "pricey" */ = {
+		2DC043C22E1D0F9C00AA18EC /* Build configuration list for PBXProject "Pricey" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				2DC043D42E1D0F9F00AA18EC /* Debug */,
@@ -311,7 +311,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		2DC043D62E1D0F9F00AA18EC /* Build configuration list for PBXNativeTarget "pricey" */ = {
+		2DC043D62E1D0F9F00AA18EC /* Build configuration list for PBXNativeTarget "Pricey" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				2DC043D72E1D0F9F00AA18EC /* Debug */,
