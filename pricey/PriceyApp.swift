@@ -106,7 +106,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 	
 	func getClaudeProjectDirectories() -> [String] {
-		let homeDirectory = "/Users/gilm"
+		let homeDirectory = FileManager.default.homeDirectoryForCurrentUser.path
 		let claudeProjectsPath = "\(homeDirectory)/.claude/projects"
 		let fileManager = FileManager.default
 		
