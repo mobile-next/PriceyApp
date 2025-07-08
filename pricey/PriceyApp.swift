@@ -1,6 +1,11 @@
 import SwiftUI
 import Foundation
 
+struct FileCacheEntry {
+	let timestamp: Date
+	let tokenCounts: TokenCounts
+}
+
 struct ClaudePricing {
 	let inputTokenCostPer1M: Double
 	let outputTokenCostPer1M: Double
@@ -32,6 +37,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	var updateTimer: Timer?
 	var animatedTotalCost: AnimatedDouble!
 	var animatedClaudeCost: AnimatedDouble!
+	static var fileCache: [String: FileCacheEntry] = [:]
 	
 	func applicationDidFinishLaunching(_ notification: Notification) {
 		NSApp.setActivationPolicy(.accessory)
@@ -127,6 +133,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 	
 	func processJsonlFile(filePath: String, seenRequestIds: inout Set<String>) -> TokenCounts {
+		let fileManager = FileManager.default
+		
+		// get file modification timestamp
+		guard let attributes = try? fileManager.attributesOfItem(atPath: filePath),
+			  let modificationDate = attributes[.modificationDate] as? Date else {
+			print("Could not get file attributes for: \(filePath)")
+			return TokenCounts.zero
+		}
+		
+		// check cache timestamp
+		if let cachedEntry = AppDelegate.fileCache[filePath],
+		   cachedEntry.timestamp == modificationDate {
+			//print("Cache hit for file: \(filePath)")
+			return cachedEntry.tokenCounts
+		}
+		
 		var tokenCounts = TokenCounts.zero
 		print("Reading file: \(filePath)")
 		
@@ -182,6 +204,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 			print("Error reading file \(filePath): \(error)")
 		}
 		
+		// Update cache
+		AppDelegate.fileCache[filePath] = FileCacheEntry(
+			timestamp: modificationDate,
+			tokenCounts: tokenCounts
+		)
+		
 		return tokenCounts
 	}
 	
@@ -194,7 +222,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		do {
 			let projectContents = try fileManager.contentsOfDirectory(atPath: directoryPath)
 			let jsonlFiles = projectContents.filter { $0.hasSuffix(".jsonl") }
-			print("Found \(jsonlFiles.count) .jsonl files in \(directoryPath): \(jsonlFiles)")
+			print("Found \(jsonlFiles.count) .jsonl files in \(directoryPath)")
 			
 			for jsonlFile in jsonlFiles {
 				let filePath = "\(directoryPath)/\(jsonlFile)"
