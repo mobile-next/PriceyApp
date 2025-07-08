@@ -3,7 +3,7 @@ import Foundation
 
 struct FileCacheEntry {
 	let timestamp: Date
-	let tokenCounts: TokenCounts
+	let usageStat: UsageStat
 }
 
 struct ClaudePricing {
@@ -85,9 +85,31 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	func createMenu() {
 		let menu = NSMenu()
 		
-		let claudeItem = NSMenuItem(title: "Claude: $\(String(format: "%.3f", animatedClaudeCost.value))", action: nil, keyEquivalent: "")
+		// let claudeItem = NSMenuItem(title: "Claude: $\(String(format: "%.3f", animatedClaudeCost.value))", action: nil, keyEquivalent: "")
 		
-		menu.addItem(claudeItem)
+		// Get current usage statistics
+		let totalUsageStat = getTokenCounts()
+				
+		// Create attributed string for line change statistics
+		let lineStatsString = NSMutableAttributedString()
+		lineStatsString.append(NSAttributedString(string: "+\(totalUsageStat.linesAdded)", attributes: [
+			.foregroundColor: NSColor(red: 0x3F/255.0, green: 0xBA/255.0, blue: 0x50/255.0, alpha: 1.0)
+		]))
+		
+		lineStatsString.append(NSAttributedString(string: " -\(totalUsageStat.linesRemoved)", attributes: [
+			.foregroundColor: NSColor(red: 0xD1/255.0, green: 0x24/255.0, blue: 0x2F/255.0, alpha: 1.0)
+		]))
+				
+		lineStatsString.append(NSAttributedString(string: " lines", attributes: [
+			.foregroundColor: NSColor.labelColor
+		]))
+		
+		let lineStatsItem = NSMenuItem()
+		lineStatsItem.attributedTitle = lineStatsString
+		lineStatsItem.action = #selector(emptyCallback)
+		
+		// menu.addItem(claudeItem)
+		menu.addItem(lineStatsItem)
 		menu.addItem(NSMenuItem.separator())
 		
 		let resetItem = NSMenuItem(title: "Reset", action: #selector(resetCosts), keyEquivalent: "")
@@ -99,6 +121,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		menu.addItem(quitItem)
 		
 		statusBarItem.menu = menu
+	}
+	
+	@objc func emptyCallback() {		
 	}
 	
 	@objc func resetCosts() {
@@ -132,24 +157,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		}
 	}
 	
-	func processJsonlFile(filePath: String, seenRequestIds: inout Set<String>) -> TokenCounts {
+	func processJsonlFile(filePath: String, seenRequestIds: inout Set<String>) -> UsageStat {
 		let fileManager = FileManager.default
 		
 		// get file modification timestamp
 		guard let attributes = try? fileManager.attributesOfItem(atPath: filePath),
 			  let modificationDate = attributes[.modificationDate] as? Date else {
 			print("Could not get file attributes for: \(filePath)")
-			return TokenCounts.zero
+			return UsageStat.zero
 		}
 		
 		// check cache timestamp
 		if let cachedEntry = AppDelegate.fileCache[filePath],
 		   cachedEntry.timestamp == modificationDate {
 			//print("Cache hit for file: \(filePath)")
-			return cachedEntry.tokenCounts
+			return cachedEntry.usageStat
 		}
 		
-		var tokenCounts = TokenCounts.zero
+		var usageStat = UsageStat.zero
 		print("Reading file: \(filePath)")
 		
 		let dateFormatter = DateFormatter()
@@ -174,23 +199,50 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 							}
 							
 							if let timestamp = json["timestamp"] as? String,
-							   timestamp.starts(with: todayPrefix),
-							   let message = json["message"] as? [String: Any],
-							   let usage = message["usage"] as? [String: Any] {
+							   timestamp.starts(with: todayPrefix) {
 								
-								let inputTokens = Int64(usage["input_tokens"] as? Int ?? 0)
-								let outputTokens = Int64(usage["output_tokens"] as? Int ?? 0)
-								let cacheCreationTokens = Int64(usage["cache_creation_input_tokens"] as? Int ?? 0)
-								let cacheReadTokens = Int64(usage["cache_read_input_tokens"] as? Int ?? 0)
+								// Parse token usage data
+								var inputTokens: Int64 = 0
+								var outputTokens: Int64 = 0
+								var cacheCreationTokens: Int64 = 0
+								var cacheReadTokens: Int64 = 0
+								var linesAdded: Int64 = 0
+								var linesRemoved: Int64 = 0
 								
-								let additionalTokens = TokenCounts(
+								if let message = json["message"] as? [String: Any],
+								   let usage = message["usage"] as? [String: Any] {
+									inputTokens = Int64(usage["input_tokens"] as? Int ?? 0)
+									outputTokens = Int64(usage["output_tokens"] as? Int ?? 0)
+									cacheCreationTokens = Int64(usage["cache_creation_input_tokens"] as? Int ?? 0)
+									cacheReadTokens = Int64(usage["cache_read_input_tokens"] as? Int ?? 0)
+								}
+								
+								// Parse toolUseResult.structuredPatch data
+								if let toolUseResult = json["toolUseResult"] as? [String: Any],
+								   let structuredPatch = toolUseResult["structuredPatch"] as? [[String: Any]] {
+									for patch in structuredPatch {
+										if let patchLines = patch["lines"] as? [String] {
+											for patchLine in patchLines {
+												if patchLine.hasPrefix("+") {
+													linesAdded += 1
+												} else if patchLine.hasPrefix("-") {
+													linesRemoved += 1
+												}
+											}
+										}
+									}
+								}
+								
+								let additionalStat = UsageStat(
 									inputTokens: inputTokens,
 									outputTokens: outputTokens,
 									cacheCreationTokens: cacheCreationTokens,
-									cacheReadTokens: cacheReadTokens
+									cacheReadTokens: cacheReadTokens,
+									linesAdded: linesAdded,
+									linesRemoved: linesRemoved
 								)
 								
-								tokenCounts = tokenCounts + additionalTokens
+								usageStat = usageStat + additionalStat
 							}
 						} else {
 							print("Line \(lineIndex): Failed to parse JSON")
@@ -207,15 +259,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		// Update cache
 		AppDelegate.fileCache[filePath] = FileCacheEntry(
 			timestamp: modificationDate,
-			tokenCounts: tokenCounts
+			usageStat: usageStat
 		)
 		
-		return tokenCounts
+		return usageStat
 	}
 	
-	func processDirectory(directoryPath: String, seenRequestIds: inout Set<String>) -> TokenCounts {
+	func processDirectory(directoryPath: String, seenRequestIds: inout Set<String>) -> UsageStat {
 		let fileManager = FileManager.default
-		var totalTokenCounts = TokenCounts.zero
+		var totalUsageStat = UsageStat.zero
 		
 		print("Processing project directory: \(directoryPath)")
 		
@@ -226,37 +278,43 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 			
 			for jsonlFile in jsonlFiles {
 				let filePath = "\(directoryPath)/\(jsonlFile)"
-				let tokenCounts = processJsonlFile(filePath: filePath, seenRequestIds: &seenRequestIds)
-				totalTokenCounts = totalTokenCounts + tokenCounts
+				let usageStat = processJsonlFile(filePath: filePath, seenRequestIds: &seenRequestIds)
+				totalUsageStat = totalUsageStat + usageStat
 			}
 		} catch {
 			print("Error reading directory \(directoryPath): \(error)")
 		}
 		
-		return totalTokenCounts
+		return totalUsageStat
 	}
 	
-	func sumClaudeInputTokens(pricing: ClaudePricing = .default) -> Int64 {
-		var totalTokenCounts = TokenCounts.zero
+	func getTokenCounts(pricing: ClaudePricing = .default) -> UsageStat {
+		var totalUsageStat = UsageStat.zero
 		var seenRequestIds = Set<String>()
 		
 		let projectDirectories = getClaudeProjectDirectories()
 		print("Found \(projectDirectories.count) project directories: \(projectDirectories)")
 		
 		for projectDir in projectDirectories {
-			let directoryTokenCounts = processDirectory(directoryPath: projectDir, seenRequestIds: &seenRequestIds)
-			totalTokenCounts = totalTokenCounts + directoryTokenCounts
+			let directoryUsageStat = processDirectory(directoryPath: projectDir, seenRequestIds: &seenRequestIds)
+			totalUsageStat = totalUsageStat + directoryUsageStat
 		}
 		
-		let totalCost = (pricing.inputTokenCostPer1M * Double(totalTokenCounts.inputTokens) / 1_000_000) +
-						(pricing.outputTokenCostPer1M * Double(totalTokenCounts.outputTokens) / 1_000_000) +
-						(pricing.cacheCreationTokenCostPer1M * Double(totalTokenCounts.cacheCreationTokens) / 1_000_000) +
-						(pricing.cacheReadTokenCostPer1M * Double(totalTokenCounts.cacheReadTokens) / 1_000_000)
+		let totalCost = (pricing.inputTokenCostPer1M * Double(totalUsageStat.inputTokens) / 1_000_000) +
+						(pricing.outputTokenCostPer1M * Double(totalUsageStat.outputTokens) / 1_000_000) +
+						(pricing.cacheCreationTokenCostPer1M * Double(totalUsageStat.cacheCreationTokens) / 1_000_000) +
+						(pricing.cacheReadTokenCostPer1M * Double(totalUsageStat.cacheReadTokens) / 1_000_000)
 		
 		costTracker.claudeCost = totalCost
 		
-		print("Total tokens calculated in: \(totalTokenCounts.inputTokens) out: \(totalTokenCounts.outputTokens) cache_creation: \(totalTokenCounts.cacheCreationTokens) cache_read: \(totalTokenCounts.cacheReadTokens)")
+		print("Total tokens calculated in: \(totalUsageStat.inputTokens) out: \(totalUsageStat.outputTokens) cache_creation: \(totalUsageStat.cacheCreationTokens) cache_read: \(totalUsageStat.cacheReadTokens)")
+		print("Total usage stats - Lines added: \(totalUsageStat.linesAdded) removed: \(totalUsageStat.linesRemoved)")
 		print("Total Claude cost: $\(String(format: "%.4f", totalCost))")
-		return totalTokenCounts.inputTokens
+		return totalUsageStat
+	}
+	
+	func sumClaudeInputTokens(pricing: ClaudePricing = .default) -> Int64 {
+		let totalUsageStat = getTokenCounts(pricing: pricing)
+		return totalUsageStat.inputTokens
 	}
 }
