@@ -21,6 +21,25 @@ jobs:
       with:
         xcode-version: latest-stable
 
+    - name: Import certificates and provisioning profile
+      env:
+        DEVELOPER_ID_APPLICATION_CERT: ${{ secrets.DEVELOPER_ID_APPLICATION_CERT }}
+        DEVELOPER_ID_APPLICATION_PASSWORD: ${{ secrets.DEVELOPER_ID_APPLICATION_PASSWORD }}
+        PROVISIONING_PROFILE: ${{ secrets.PROVISIONING_PROFILE }}
+      run: |
+        # Create keychain
+        security create-keychain -p "" build.keychain
+        security default-keychain -s build.keychain
+        security unlock-keychain -p "" build.keychain
+    
+        echo "$DEVELOPER_ID_APPLICATION_CERT" | base64 --decode > certificate.p12
+        security import certificate.p12 -k build.keychain -P "$DEVELOPER_ID_APPLICATION_PASSWORD" -T /usr/bin/codesign
+    
+        mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+        echo "$PROVISIONING_PROFILE" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/Pricey_Developer_ID_Application.provisionprofile
+    
+        security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+
     - name: Build app
       run: |
         xcodebuild -scheme Pricey -configuration Release -derivedDataPath build clean build
