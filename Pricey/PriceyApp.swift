@@ -26,6 +26,22 @@ struct ClaudePricing {
 struct PriceyApp: App {
 	@NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 	
+	// Locale-aware formatters
+	static let currencyFormatter: NumberFormatter = {
+		let formatter = NumberFormatter()
+		formatter.numberStyle = .currency
+		formatter.currencyCode = "USD"
+		formatter.maximumFractionDigits = 3
+		return formatter
+	}()
+	
+	static let numberFormatter: NumberFormatter = {
+		let formatter = NumberFormatter()
+		formatter.numberStyle = .decimal
+		formatter.maximumFractionDigits = 0
+		return formatter
+	}()
+	
 	var body: some Scene {
 		Settings {
 			SettingsView()
@@ -70,7 +86,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		animatedTotalCost = AnimatedDouble(initialValue: 0.0) { [weak self] value in
 			DispatchQueue.main.async {
 				if let button = self?.statusBarItem.button {
-					button.title = "$\(String(format: "%.3f", value))"
+					button.title = PriceyApp.currencyFormatter.string(from: NSNumber(value: value)) ?? "$0"
 					button.font = NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
 				}
 			}
@@ -115,11 +131,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 				
 		// Create attributed string for line change statistics
 		let lineStatsString = NSMutableAttributedString()
-		lineStatsString.append(NSAttributedString(string: "+\(totalUsageStat.linesAdded)", attributes: [
+		let linesAddedFormatted = PriceyApp.numberFormatter.string(from: NSNumber(value: totalUsageStat.linesAdded)) ?? "0"
+		let linesRemovedFormatted = PriceyApp.numberFormatter.string(from: NSNumber(value: totalUsageStat.linesRemoved)) ?? "0"
+		
+		lineStatsString.append(NSAttributedString(string: "+\(linesAddedFormatted)", attributes: [
 			.foregroundColor: NSColor(red: 0x3F/255.0, green: 0xBA/255.0, blue: 0x50/255.0, alpha: 1.0)
 		]))
 		
-		lineStatsString.append(NSAttributedString(string: " -\(totalUsageStat.linesRemoved)", attributes: [
+		lineStatsString.append(NSAttributedString(string: " -\(linesRemovedFormatted)", attributes: [
 			.foregroundColor: NSColor(red: 0xD1/255.0, green: 0x24/255.0, blue: 0x2F/255.0, alpha: 1.0)
 		]))
 				
@@ -136,7 +155,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		
 		// Calculate and add human salary item
 		let humanSalary = calculateHumanSalary(totalUsageStat: totalUsageStat)
-		let humanSalaryItem = NSMenuItem(title: "Human salary: $\(humanSalary)", action: #selector(emptyCallback), keyEquivalent: "")
+		let humanSalaryFormatted = PriceyApp.currencyFormatter.string(from: NSNumber(value: humanSalary)) ?? "$0"
+		let humanSalaryItem = NSMenuItem(title: "Saved \(humanSalaryFormatted) in Salary", action: #selector(emptyCallback), keyEquivalent: "")
 		humanSalaryItem.target = self
 		menu.addItem(humanSalaryItem)
 		
@@ -373,7 +393,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		
 		print("Total tokens calculated in: \(totalUsageStat.inputTokens) out: \(totalUsageStat.outputTokens) cache_creation: \(totalUsageStat.cacheCreationTokens) cache_read: \(totalUsageStat.cacheReadTokens)")
 		print("Total usage stats - Lines added: \(totalUsageStat.linesAdded) removed: \(totalUsageStat.linesRemoved)")
-		print("Total Claude cost: $\(String(format: "%.4f", totalCost))")
+		let totalCostFormatted = PriceyApp.currencyFormatter.string(from: NSNumber(value: totalCost)) ?? "$0"
+		print("Total Claude cost: \(totalCostFormatted)")
 		return totalUsageStat
 	}
 	
@@ -383,18 +404,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 	
 	func calculateHumanSalary(totalUsageStat: UsageStat) -> Int {
-		// Get settings from UserDefaults
 		let linesPerDay = UserDefaults.standard.integer(forKey: "LinesPerDay")
 		let yearlySalary = UserDefaults.standard.integer(forKey: "YearlySalary")
 		
-		// Use default values if not set
 		let effectiveLinesPerDay = linesPerDay > 0 ? linesPerDay : 100
 		let effectiveYearlySalary = yearlySalary > 0 ? yearlySalary : 100000
 		
-		// Calculate: ceil((linesAdded + linesRemoved) / lines_per_day) * (salary_per_year / 260)
+		// calculate: ceil((linesAdded + linesRemoved) / lines_per_day) * (salary_per_year / 260)
+		let workDaysPerYear = 260.0
 		let totalLines = Int(totalUsageStat.linesAdded + totalUsageStat.linesRemoved)
 		let daysWorked = ceil(Double(totalLines) / Double(effectiveLinesPerDay))
-		let dailySalary = Double(effectiveYearlySalary) / 260.0
+		let dailySalary = Double(effectiveYearlySalary) / workDaysPerYear
 		let humanSalary = daysWorked * dailySalary
 		
 		return Int(humanSalary)
