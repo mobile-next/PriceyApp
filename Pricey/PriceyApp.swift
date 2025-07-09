@@ -28,7 +28,22 @@ struct PriceyApp: App {
 	
 	var body: some Scene {
 		Settings {
-			EmptyView()
+			SettingsView()
+		}
+		.windowResizability(.contentSize)
+		
+		MenuBarExtra("Pricey", systemImage: "dollarsign.circle") {
+			SettingsLink {
+				Text("Settings...")
+			}
+			.keyboardShortcut(",", modifiers: .command)
+			
+			Divider()
+			
+			Button("Quit") {
+				NSApplication.shared.terminate(nil)
+			}
+			.keyboardShortcut("q", modifiers: .command)
 		}
 	}
 	
@@ -46,7 +61,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	var animatedTotalCost: AnimatedDouble!
 	var animatedClaudeCost: AnimatedDouble!
 	var timestampThreshold: Date = PriceyApp.getMidnightToday()
-	var settingsWindowController: SettingsWindowController?
 	static var fileCache: [String: FileCacheEntry] = [:]
 	
 	func applicationDidFinishLaunching(_ notification: Notification) {
@@ -151,13 +165,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	
 	@objc func openSettings() {
 		print("Opening settings window...")
-		if settingsWindowController == nil {
-			print("Creating new settings window controller")
-			settingsWindowController = SettingsWindowController()
+		
+		// For status bar apps in macOS 14+, we need to open settings differently
+		// Try the keyboard shortcut approach as the most reliable method
+		let event = NSEvent.keyEvent(
+			with: .keyDown,
+			location: .zero,
+			modifierFlags: .command,
+			timestamp: 0,
+			windowNumber: 0,
+			context: nil,
+			characters: ",",
+			charactersIgnoringModifiers: ",",
+			isARepeat: false,
+			keyCode: 43
+		)
+		
+		if let event = event {
+			NSApp.sendEvent(event)
 		}
-		print("Showing settings window")
-		settingsWindowController?.showWindow(nil)
-		settingsWindowController?.window?.makeKeyAndOrderFront(nil)
+		
 		NSApp.activate(ignoringOtherApps: true)
 	}
 	
