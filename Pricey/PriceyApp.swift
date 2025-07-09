@@ -133,6 +133,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		
 		// menu.addItem(claudeItem)
 		menu.addItem(lineStatsItem)
+		
+		// Calculate and add human salary item
+		let humanSalary = calculateHumanSalary(totalUsageStat: totalUsageStat)
+		let humanSalaryItem = NSMenuItem(title: "Human salary: $\(humanSalary)", action: #selector(emptyCallback), keyEquivalent: "")
+		humanSalaryItem.target = self
+		menu.addItem(humanSalaryItem)
+		
 		menu.addItem(NSMenuItem.separator())
 		
 		let resetItem = NSMenuItem(title: "Reset", action: #selector(resetCosts), keyEquivalent: "")
@@ -373,5 +380,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	func sumClaudeInputTokens(pricing: ClaudePricing = .default) -> Int64 {
 		let totalUsageStat = getTokenCounts(pricing: pricing)
 		return totalUsageStat.inputTokens
+	}
+	
+	func calculateHumanSalary(totalUsageStat: UsageStat) -> Int {
+		// Get settings from UserDefaults
+		let linesPerDay = UserDefaults.standard.integer(forKey: "LinesPerDay")
+		let yearlySalary = UserDefaults.standard.integer(forKey: "YearlySalary")
+		
+		// Use default values if not set
+		let effectiveLinesPerDay = linesPerDay > 0 ? linesPerDay : 100
+		let effectiveYearlySalary = yearlySalary > 0 ? yearlySalary : 100000
+		
+		// Calculate: ceil((linesAdded + linesRemoved) / lines_per_day) * (salary_per_year / 260)
+		let totalLines = Int(totalUsageStat.linesAdded + totalUsageStat.linesRemoved)
+		let daysWorked = ceil(Double(totalLines) / Double(effectiveLinesPerDay))
+		let dailySalary = Double(effectiveYearlySalary) / 260.0
+		let humanSalary = daysWorked * dailySalary
+		
+		return Int(humanSalary)
 	}
 }

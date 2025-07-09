@@ -57,6 +57,9 @@ struct SettingsView: View {
                             TextField("", value: $linesPerDay, format: .number)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .frame(width: 120)
+                                .onChange(of: linesPerDay) {
+                                    UserDefaults.standard.set(linesPerDay, forKey: "LinesPerDay")
+                                }
                             Stepper("", value: $linesPerDay, in: 1...Int.max, step: 10)
                                 .labelsHidden()
                         }
@@ -67,6 +70,9 @@ struct SettingsView: View {
                             TextField("", value: $yearlySalary, format: .number)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .frame(width: 120)
+                                .onChange(of: yearlySalary) {
+                                    UserDefaults.standard.set(yearlySalary, forKey: "YearlySalary")
+                                }
                             Stepper("", value: $yearlySalary, in: 0...Int.max, step: 5000)
                                 .labelsHidden()
                         }
