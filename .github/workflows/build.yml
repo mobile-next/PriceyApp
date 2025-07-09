@@ -31,14 +31,18 @@ jobs:
         security create-keychain -p "" build.keychain
         security default-keychain -s build.keychain
         security unlock-keychain -p "" build.keychain
+        security set-keychain-settings -t 3600 -l build.keychain
     
         echo "$DEVELOPER_ID_APPLICATION_CERT" | base64 --decode > certificate.p12
-        security import certificate.p12 -k build.keychain -P "$DEVELOPER_ID_APPLICATION_PASSWORD" -T /usr/bin/codesign
+        security import certificate.p12 -k build.keychain -P "$DEVELOPER_ID_APPLICATION_PASSWORD" -T /usr/bin/codesign -A
     
         mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
         echo "$PROVISIONING_PROFILE" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/Pricey_Developer_ID_Application.provisionprofile
     
         security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+        
+        # List identities to verify import
+        security find-identity -v -p codesigning build.keychain
 
     - name: Build app
       run: |
