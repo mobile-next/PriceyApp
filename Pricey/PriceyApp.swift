@@ -8,19 +8,6 @@ struct FileCacheEntry {
 	let usageStat: UsageStat
 }
 
-struct ClaudePricing {
-	let inputTokenCostPer1M: Double
-	let outputTokenCostPer1M: Double
-	let cacheCreationTokenCostPer1M: Double
-	let cacheReadTokenCostPer1M: Double
-	
-	static let `default` = ClaudePricing(
-		inputTokenCostPer1M: 3.0,
-		outputTokenCostPer1M: 15.0,
-		cacheCreationTokenCostPer1M: 3.75,
-		cacheReadTokenCostPer1M: 0.30
-	)
-}
 
 @main
 struct PriceyApp: App {
@@ -32,6 +19,7 @@ struct PriceyApp: App {
 		formatter.numberStyle = .currency
 		formatter.currencyCode = "USD"
 		formatter.maximumFractionDigits = 3
+		formatter.minimumFractionDigits = 3
 		return formatter
 	}()
 	
@@ -155,7 +143,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		
 		// Calculate and add human salary item
 		let humanSalary = calculateHumanSalary(totalUsageStat: totalUsageStat)
-		let humanSalaryFormatted = PriceyApp.currencyFormatter.string(from: NSNumber(value: humanSalary)) ?? "$0"
+		let humanSalaryCeiled = Int(ceil(Double(humanSalary)))
+		let salaryFormatter = NumberFormatter()
+		salaryFormatter.numberStyle = .currency
+		salaryFormatter.currencyCode = "USD"
+		salaryFormatter.maximumFractionDigits = 0
+		let humanSalaryFormatted = salaryFormatter.string(from: NSNumber(value: humanSalaryCeiled)) ?? "$0"
 		let humanSalaryItem = NSMenuItem(title: "Saved \(humanSalaryFormatted) in Salary", action: #selector(emptyCallback), keyEquivalent: "")
 		humanSalaryItem.target = self
 		menu.addItem(humanSalaryItem)
@@ -293,12 +286,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 								var linesAdded: Int64 = 0
 								var linesRemoved: Int64 = 0
 								
+								var modelName = ""
 								if let message = json["message"] as? [String: Any],
 								   let usage = message["usage"] as? [String: Any] {
 									inputTokens = Int64(usage["input_tokens"] as? Int ?? 0)
 									outputTokens = Int64(usage["output_tokens"] as? Int ?? 0)
 									cacheCreationTokens = Int64(usage["cache_creation_input_tokens"] as? Int ?? 0)
 									cacheReadTokens = Int64(usage["cache_read_input_tokens"] as? Int ?? 0)
+									modelName = message["model"] as? String ?? ""
 								}
 								
 								// Parse toolUseResult.structuredPatch data
@@ -317,13 +312,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 									}
 								}
 								
+								let modelUsageForThisRequest = ModelUsage(
+									inputTokens: inputTokens,
+									outputTokens: outputTokens,
+									cacheCreationTokens: cacheCreationTokens,
+									cacheReadTokens: cacheReadTokens
+								)
+								
 								let additionalStat = UsageStat(
 									inputTokens: inputTokens,
 									outputTokens: outputTokens,
 									cacheCreationTokens: cacheCreationTokens,
 									cacheReadTokens: cacheReadTokens,
 									linesAdded: linesAdded,
-									linesRemoved: linesRemoved
+									linesRemoved: linesRemoved,
+									modelUsage: modelName.isEmpty ? [:] : [modelName: modelUsageForThisRequest]
 								)
 								
 								usageStat = usageStat + additionalStat
@@ -372,7 +375,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		return totalUsageStat
 	}
 	
-	func getTokenCounts(pricing: ClaudePricing = .default) -> UsageStat {
+	func getTokenCounts() -> UsageStat {
 		var totalUsageStat = UsageStat.zero
 		var seenRequestIds = Set<String>()
 		
@@ -384,10 +387,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 			totalUsageStat = totalUsageStat + directoryUsageStat
 		}
 		
-		let totalCost = (pricing.inputTokenCostPer1M * Double(totalUsageStat.inputTokens) / 1_000_000) +
-						(pricing.outputTokenCostPer1M * Double(totalUsageStat.outputTokens) / 1_000_000) +
-						(pricing.cacheCreationTokenCostPer1M * Double(totalUsageStat.cacheCreationTokens) / 1_000_000) +
-						(pricing.cacheReadTokenCostPer1M * Double(totalUsageStat.cacheReadTokens) / 1_000_000)
+		// Calculate cost from model usage
+		var totalCost = 0.0
+		for (modelName, modelUsage) in totalUsageStat.modelUsage {
+			let pricing = ClaudePricing.pricing(for: modelName)
+			let modelCost = (pricing.inputTokenCostPer1 * Double(modelUsage.inputTokens)) +
+							(pricing.outputTokenCostPer1 * Double(modelUsage.outputTokens)) +
+							(pricing.cacheCreationTokenCostPer1 * Double(modelUsage.cacheCreationTokens)) +
+							(pricing.cacheReadTokenCostPer1 * Double(modelUsage.cacheReadTokens))
+			totalCost += modelCost
+		}
 		
 		costTracker.claudeCost = totalCost
 		
@@ -398,8 +407,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		return totalUsageStat
 	}
 	
-	func sumClaudeInputTokens(pricing: ClaudePricing = .default) -> Int64 {
-		let totalUsageStat = getTokenCounts(pricing: pricing)
+	func sumClaudeInputTokens() -> Int64 {
+		let totalUsageStat = getTokenCounts()
 		return totalUsageStat.inputTokens
 	}
 	
