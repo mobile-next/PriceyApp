@@ -67,24 +67,14 @@ jobs:
       run: |
         mkdir -p dist
         cp -R build/Build/Products/Release/Pricey.app dist/
+        cd dist
+        zip -rp9 ../Pricey-darwin-arm64.zip Pricey.app
         
-    - name: Create DMG
-      run: |
-        # Create a temporary directory for DMG contents
-        mkdir -p dmg_contents
-        cp -R dist/Pricey.app dmg_contents/
-        
-        # Create a symbolic link to Applications folder
-        ln -sf /Applications dmg_contents/Applications
-        
-        # Create the DMG
-        hdiutil create -volname "Pricey" -srcfolder dmg_contents -ov -format UDZO Pricey-darwin-arm64.dmg
-        
-    - name: Upload DMG as artifact
+    - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Pricey-DMG
-        path: Pricey-darwin-arm64.dmg
+        name: Pricey
+        path: Pricey-darwin-arm64.zip
 
     - name: Upload DMG to release
       if: github.event_name == 'release'
@@ -93,7 +83,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./Pricey-darwin-arm64.dmg
-        asset_name: Pricey-darwin-arm64.dmg
+        asset_path: ./Pricey-darwin-arm64.zip
+        asset_name: Pricey-darwin-arm64.zip
         asset_content_type: application/octet-stream
 
