@@ -42,8 +42,10 @@ jobs:
         mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
         echo "$PROVISIONING_PROFILE" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/Pricey_Developer_ID_Application.provisionprofile
     
-        security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+        security dump-keychain build.keychain
         security list-keychain -d user -s build.keychain
+
+        security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
         
         # List identities to verify import
         security find-identity -v -p codesigning
