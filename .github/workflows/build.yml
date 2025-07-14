@@ -33,16 +33,20 @@ jobs:
         security default-keychain -s build.keychain
         security unlock-keychain -p "" build.keychain
 
-        echo "$APPLE_WWDR_CERT" | base64 --decode > apple_wwdr.cer
+        echo -n "$APPLE_WWDR_CERT" | base64 --decode > apple_wwdr.cer
         security import apple_wwdr.cer -k build.keychain -T /usr/bin/codesign
     
-        echo "$DEVELOPER_ID_APPLICATION_CERT" | base64 --decode > certificate.p12
-        security import certificate.p12 -k build.keychain -P "$DEVELOPER_ID_APPLICATION_PASSWORD" -T /usr/bin/codesign -A
+        echo -n "$DEVELOPER_ID_APPLICATION_CERT" | base64 --decode > certificate.p12
+        security import certificate.p12 -k build.keychain -P "$DEVELOPER_ID_APPLICATION_PASSWORD" -A -t cert -f pkcs12
+
+        mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+        echo "$PROVISIONING_PROFILE" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/Pricey_Developer_ID_Application.provisionprofile
     
         security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+        security list-keychain -d user -s build.keychain
         
         # List identities to verify import
-        security find-identity -v -p codesigning build.keychain
+        security find-identity -v -p codesigning
 
     - name: Build app
       run: |
@@ -51,6 +55,7 @@ jobs:
           -configuration Release \
           -derivedDataPath build \
           CODE_SIGN_IDENTITY="Developer ID Application: Goose Wrappers UG (haftungsbeschrankt)" \
+          PROVISIONING_PROFILE_SPECIFIER="Pricey Developer ID Application" \
           DEVELOPMENT_TEAM="6TMG4Q64WM" \
           clean build
         
