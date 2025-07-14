@@ -78,13 +78,13 @@ jobs:
         ln -sf /Applications dmg_contents/Applications
         
         # Create the DMG
-        hdiutil create -volname "Pricey" -srcfolder dmg_contents -ov -format UDZO Pricey.dmg
+        hdiutil create -volname "Pricey" -srcfolder dmg_contents -ov -format UDZO Pricey-darwin-arm64.dmg
         
     - name: Upload DMG as artifact
       uses: actions/upload-artifact@v4
       with:
         name: Pricey-DMG
-        path: Pricey.dmg
+        path: Pricey-darwin-arm64.dmg
 
     - name: Upload DMG to release
       if: github.event_name == 'release'
@@ -93,7 +93,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./Pricey.dmg
-        asset_name: Pricey.dmg
+        asset_path: ./Pricey-darwin-arm64.dmg
+        asset_name: Pricey-darwin-arm64.dmg
         asset_content_type: application/octet-stream
 
