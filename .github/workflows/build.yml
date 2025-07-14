@@ -23,6 +23,7 @@ jobs:
 
     - name: Import certificates and provisioning profile
       env:
+        APPLE_WWDR_CERT: ${{ secrets.APPLE_WWDR_CERT }}
         DEVELOPER_ID_APPLICATION_CERT: ${{ secrets.DEVELOPER_ID_APPLICATION_CERT }}
         DEVELOPER_ID_APPLICATION_PASSWORD: ${{ secrets.DEVELOPER_ID_APPLICATION_PASSWORD }}
         PROVISIONING_PROFILE: ${{ secrets.PROVISIONING_PROFILE }}
@@ -31,7 +32,9 @@ jobs:
         security create-keychain -p "" build.keychain
         security default-keychain -s build.keychain
         security unlock-keychain -p "" build.keychain
-        security set-keychain-settings -t 3600 -l build.keychain
+
+        echo "$APPLE_WWDR_CERT" | base64 --decode > apple_wwdr.cer
+        security import apple_wwdr.cer -k build.keychain -T /usr/bin/codesign
     
         echo "$DEVELOPER_ID_APPLICATION_CERT" | base64 --decode > certificate.p12
         security import certificate.p12 -k build.keychain -P "$DEVELOPER_ID_APPLICATION_PASSWORD" -T /usr/bin/codesign -A
