@@ -46,7 +46,13 @@ jobs:
 
     - name: Build app
       run: |
-        xcodebuild -scheme Pricey -configuration Release -derivedDataPath build CODE_SIGN_IDENTITY="Developer ID Application: Goose Wrappers UG (haftungsbeschrankt)" PROVISIONING_PROFILE_SPECIFIER="Pricey Developer ID Application" DEVELOPMENT_TEAM="6TMG4Q64WM" clean build
+        xcodebuild \
+          -scheme Pricey \
+          -configuration Release \
+          -derivedDataPath build \
+          CODE_SIGN_IDENTITY="Developer ID Application: Goose Wrappers UG (haftungsbeschrankt)" \
+          DEVELOPMENT_TEAM="6TMG4Q64WM" \
+          clean build
         
     - name: Create app bundle
       run: |
