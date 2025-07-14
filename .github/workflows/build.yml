@@ -50,6 +50,8 @@ jobs:
         # List identities to verify import
         security find-identity -v -p codesigning
 
+        security default-keychain -s build.keychain
+
     - name: Build app
       run: |
         xcodebuild \
