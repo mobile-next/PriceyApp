@@ -39,8 +39,8 @@ jobs:
         echo -n "$DEVELOPER_ID_APPLICATION_CERT" | base64 --decode > certificate.p12
         security import certificate.p12 -k build.keychain -P "$DEVELOPER_ID_APPLICATION_PASSWORD" -A -t cert -f pkcs12
 
-        mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-        echo "$PROVISIONING_PROFILE" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/Pricey_Developer_ID_Application.provisionprofile
+        # mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+        # echo "$PROVISIONING_PROFILE" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/Pricey_Developer_ID_Application.provisionprofile
     
         security dump-keychain build.keychain
         security list-keychain -d user -s build.keychain
@@ -59,7 +59,6 @@ jobs:
           -configuration Release \
           -derivedDataPath build \
           CODE_SIGN_IDENTITY="Developer ID Application: Goose Wrappers UG (haftungsbeschrankt)" \
-          PROVISIONING_PROFILE_SPECIFIER="Pricey Developer ID Application" \
           DEVELOPMENT_TEAM="6TMG4Q64WM" \
           clean build
         
