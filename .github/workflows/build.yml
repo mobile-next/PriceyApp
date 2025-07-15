@@ -27,6 +27,7 @@ jobs:
         DEVELOPER_ID_APPLICATION_CERT: ${{ secrets.DEVELOPER_ID_APPLICATION_CERT }}
         DEVELOPER_ID_APPLICATION_PASSWORD: ${{ secrets.DEVELOPER_ID_APPLICATION_PASSWORD }}
         PROVISIONING_PROFILE: ${{ secrets.PROVISIONING_PROFILE }}
+        EXPORT_OPTIONS_PLIST: ${{ env.EXPORT_OPTIONS_PLIST }}
       run: |
         # Create keychain
         security create-keychain -p "" build.keychain
@@ -39,8 +40,8 @@ jobs:
         echo -n "$DEVELOPER_ID_APPLICATION_CERT" | base64 --decode > certificate.p12
         security import certificate.p12 -k build.keychain -P "$DEVELOPER_ID_APPLICATION_PASSWORD" -A -t cert -f pkcs12
 
-        # mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-        # echo "$PROVISIONING_PROFILE" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/Pricey_Developer_ID_Application.provisionprofile
+        mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+        echo "$PROVISIONING_PROFILE" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/Pricey_Developer_ID_Application.provisionprofile
     
         security dump-keychain build.keychain
         security list-keychain -d user -s build.keychain
@@ -54,28 +55,24 @@ jobs:
 
     - name: Build app
       run: |
-        xcodebuild \
-          -scheme Pricey \
-          -configuration Release \
-          -derivedDataPath build \
-          CODE_SIGN_IDENTITY="Developer ID Application: Goose Wrappers UG (haftungsbeschrankt)" \
-          DEVELOPMENT_TEAM="6TMG4Q64WM" \
-          clean build
+        xcodebuild archive -scheme Pricey -archivePath archive_path.xcarchive
+        echo $EXPORT_OPTIONS_PLIST > export_options.plist
+        xcodebuild -exportArchive -archivePath archive_path.xcarchive -exportOptionsPlist export_options.plist -exportPath export_path
         
     - name: Create app bundle
       run: |
         mkdir -p dist
-        cp -R build/Build/Products/Release/Pricey.app dist/
+        cp -R export_path/Pricey.app dist
         cd dist
         zip -rp9 ../Pricey-darwin-arm64.zip Pricey.app
         
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Pricey
+        name: Pricey-darwin-arm64
         path: Pricey-darwin-arm64.zip
 
-    - name: Upload DMG to release
+    - name: Upload release
       if: github.event_name == 'release'
       uses: actions/upload-release-asset@v1
       env:
