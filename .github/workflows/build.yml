@@ -64,6 +64,7 @@ jobs:
 
     - name: Export archive
       run: |
+        env
         echo $EXPORT_OPTIONS_PLIST > export_options.plist
         ls -l export_options.plist
         xcodebuild \
