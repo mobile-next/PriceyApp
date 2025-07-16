@@ -27,11 +27,6 @@ jobs:
         DEVELOPER_ID_APPLICATION_CERT: ${{ secrets.DEVELOPER_ID_APPLICATION_CERT }}
         DEVELOPER_ID_APPLICATION_PASSWORD: ${{ secrets.DEVELOPER_ID_APPLICATION_PASSWORD }}
         PROVISIONING_PROFILE: ${{ secrets.PROVISIONING_PROFILE }}
-        NOTARY_KEY: ${{ secrets.NOTARY_KEY }}
-        NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
-        NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
-        DEVELOPMENT_TEAM: ${{ secrets.DEVELOPMENT_TEAM }}
-        CODE_SIGN_IDENTITY: ${{ secrets.CODE_SIGN_IDENTITY }}
       run: |
         # Create keychain
         security create-keychain -p "" build.keychain
@@ -58,6 +53,9 @@ jobs:
         security default-keychain -s build.keychain
 
     - name: Archive app
+      env:
+        DEVELOPMENT_TEAM: ${{ secrets.DEVELOPMENT_TEAM }}
+        CODE_SIGN_IDENTITY: ${{ secrets.CODE_SIGN_IDENTITY }}
       run: |
         xcodebuild \
           DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" \
@@ -67,7 +65,13 @@ jobs:
           archive
 
     - name: Export archive
+      env:
+        DEVELOPMENT_TEAM: ${{ secrets.DEVELOPMENT_TEAM }}
+        CODE_SIGN_IDENTITY: ${{ secrets.CODE_SIGN_IDENTITY }}
+        EXPORT_OPTIONS_PLIST: ${{ vars.EXPORT_OPTIONS_PLIST }}
       run: |
+        echo $EXPORT_OPTIONS_PLIST > export_options.plist
+        ls -l export_options.plist
         xcodebuild \
           DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" \
           CODE_SIGN_IDENTITY="$CODE_SIGN_IDENTITY" \
@@ -82,6 +86,10 @@ jobs:
         ditto -c -k --keepParent Pricey.app ../Pricey-darwin-arm64.zip
 
     - name: Submit to Notary
+      env:
+        NOTARY_KEY: ${{ secrets.NOTARY_KEY }}
+        NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+        NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
       run: |
         echo $NOTARY_KEY | base64 --decode > AuthKey.p8
         ls -l AuthKey.p8
