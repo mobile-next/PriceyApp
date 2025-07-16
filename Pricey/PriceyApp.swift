@@ -299,13 +299,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 								// Parse toolUseResult.structuredPatch data
 								if let toolUseResult = json["toolUseResult"] as? [String: Any],
 								   let structuredPatch = toolUseResult["structuredPatch"] as? [[String: Any]] {
-									for patch in structuredPatch {
-										if let patchLines = patch["lines"] as? [String] {
-											for patchLine in patchLines {
-												if patchLine.hasPrefix("+") {
-													linesAdded += 1
-												} else if patchLine.hasPrefix("-") {
-													linesRemoved += 1
+									if structuredPatch.isEmpty {
+										// Handle empty structuredPatch with "create" type
+										if let type = toolUseResult["type"] as? String, type == "create",
+										   let content = toolUseResult["content"] as? String {
+											let newlineCount = content.components(separatedBy: "\n").count
+											linesAdded += Int64(newlineCount)
+										}
+									} else {
+										for patch in structuredPatch {
+											if let patchLines = patch["lines"] as? [String] {
+												for patchLine in patchLines {
+													if patchLine.hasPrefix("+") {
+														linesAdded += 1
+													} else if patchLine.hasPrefix("-") {
+														linesRemoved += 1
+													}
 												}
 											}
 										}
