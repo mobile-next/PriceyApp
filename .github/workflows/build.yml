@@ -27,6 +27,11 @@ jobs:
         DEVELOPER_ID_APPLICATION_CERT: ${{ secrets.DEVELOPER_ID_APPLICATION_CERT }}
         DEVELOPER_ID_APPLICATION_PASSWORD: ${{ secrets.DEVELOPER_ID_APPLICATION_PASSWORD }}
         PROVISIONING_PROFILE: ${{ secrets.PROVISIONING_PROFILE }}
+        NOTARY_KEY: ${{ secrets.NOTARY_KEY }}
+        NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+        NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
+        DEVELOPMENT_TEAM: ${{ secrets.DEVELOPMENT_TEAM }}
+        CODE_SIGN_IDENTITY: ${{ secrets.CODE_SIGN_IDENTITY }}
       run: |
         # Create keychain
         security create-keychain -p "" build.keychain
@@ -55,8 +60,8 @@ jobs:
     - name: Archive app
       run: |
         xcodebuild \
-          DEVELOPMENT_TEAM="6TMG4Q64WM" \
-          CODE_SIGN_IDENTITY="Developer ID Application: Goose Wrappers UG (haftungsbeschrankt)" \
+          DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" \
+          CODE_SIGN_IDENTITY="$CODE_SIGN_IDENTITY" \
           -scheme Pricey \
           -archivePath archive_path.xcarchive \
           archive
@@ -64,8 +69,8 @@ jobs:
     - name: Export archive
       run: |
         xcodebuild \
-          DEVELOPMENT_TEAM="6TMG4Q64WM" \
-          CODE_SIGN_IDENTITY="Developer ID Application: Goose Wrappers UG (haftungsbeschrankt)" \
+          DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" \
+          CODE_SIGN_IDENTITY="$CODE_SIGN_IDENTITY" \
           -exportArchive \
           -archivePath archive_path.xcarchive \
           -exportOptionsPlist export_options.plist \
@@ -78,11 +83,9 @@ jobs:
 
     - name: Submit to Notary
       run: |
-        KEY="LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JR1RBZ0VBTUJNR0J5cUdTTTQ5QWdFR0NDcUdTTTQ5QXdFSEJIa3dkd0lCQVFRZ1VvQ2hXREZXTm12QkJUc1IKM3M2T1RrVXdzSXVqYVRCNGpnRUltSFRUSmZpZ0NnWUlLb1pJemowREFRZWhSQU5DQUFSRXBCUDlzeUJLQk5TQgp5Vkhha0F5K0xlbmcwVThkN0FlaVVycTFEQkN1a3dsRE50SlVpdGZwNDZ1Vi8xZFJVQzJWM09jOUlkRUdDbGw4CkdNT1VsZk5uCi0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0="
-        echo -n $KEY | base64 --decode > AuthKey.p8
-        KEY_ID="GUBL599Y7M"
-        ISSUER="1ed46d6e-b563-4fc1-8ba8-086dcc85535c"
-        xcrun notarytool submit Pricey-darwin-arm64.zip --key AuthKey.p8 --key-id $KEY_ID --issuer $ISSUER --wait
+        echo $NOTARY_KEY | base64 --decode > AuthKey.p8
+        xcrun notarytool submit Pricey-darwin-arm64.zip --key AuthKey.p8 --key-id $NOTARY_KEY_ID --issuer $NOTARY_ISSUER --wait
+        rm -f AuthKey.p8
         
     - name: Upload artifact
       uses: actions/upload-artifact@v4
