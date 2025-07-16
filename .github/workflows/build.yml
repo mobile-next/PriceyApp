@@ -84,6 +84,7 @@ jobs:
     - name: Submit to Notary
       run: |
         echo $NOTARY_KEY | base64 --decode > AuthKey.p8
+        ls -l AuthKey.p8
         xcrun notarytool submit Pricey-darwin-arm64.zip --key AuthKey.p8 --key-id $NOTARY_KEY_ID --issuer $NOTARY_ISSUER --wait
         rm -f AuthKey.p8
         
