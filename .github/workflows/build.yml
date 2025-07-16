@@ -2,11 +2,13 @@ name: Build1
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+    tags:
+      - "*.*.*"
   pull_request:
-    branches: [ main ]
-  release:
-    types: [published]
+    branches:
+      - main
 
 jobs:
   build:
