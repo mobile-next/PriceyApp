@@ -105,13 +105,12 @@ jobs:
         path: Pricey-darwin-arm64.zip
 
     - name: Upload release
-      if: github.event_name == 'release'
-      uses: actions/upload-release-asset@v1
+      if: github.ref_type == 'tag'
+      uses: softprops/action-gh-release@v2
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.RELEASES_TOKEN }}
       with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./Pricey-darwin-arm64.zip
-        asset_name: Pricey-darwin-arm64.zip
-        asset_content_type: application/octet-stream
+        name: Version ${{ github.ref_name }}
+        files: |
+          Pricey-darwin-arm64.zip
 
