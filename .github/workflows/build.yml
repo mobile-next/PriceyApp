@@ -73,10 +73,16 @@ jobs:
         
     - name: Create app bundle
       run: |
-        mkdir -p dist
-        cp -R export_path/Pricey.app dist
-        cd dist
-        zip -rp9 ../Pricey-darwin-arm64.zip Pricey.app
+        cd export_path
+        ditto -c -k --keepParent Pricey.app ../Pricey-darwin-arm64.zip
+
+    - name: Submit to Notary
+      run: |
+        KEY="LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JR1RBZ0VBTUJNR0J5cUdTTTQ5QWdFR0NDcUdTTTQ5QXdFSEJIa3dkd0lCQVFRZ1VvQ2hXREZXTm12QkJUc1IKM3M2T1RrVXdzSXVqYVRCNGpnRUltSFRUSmZpZ0NnWUlLb1pJemowREFRZWhSQU5DQUFSRXBCUDlzeUJLQk5TQgp5Vkhha0F5K0xlbmcwVThkN0FlaVVycTFEQkN1a3dsRE50SlVpdGZwNDZ1Vi8xZFJVQzJWM09jOUlkRUdDbGw4CkdNT1VsZk5uCi0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0="
+        echo -n $KEY | base64 --decode > AuthKey.p8
+        KEY_ID="GUBL599Y7M"
+        ISSUER="1ed46d6e-b563-4fc1-8ba8-086dcc85535c"
+        xcrun notarytool submit Pricey-darwin-arm64.zip --key AuthKey.p8 --key-id $KEY_ID --issuer $ISSUER --wait
         
     - name: Upload artifact
       uses: actions/upload-artifact@v4
