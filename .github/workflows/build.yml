@@ -70,6 +70,7 @@ jobs:
           CODE_SIGN_IDENTITY="Developer ID Application: Goose Wrappers UG (haftungsbeschrankt)" \
           -exportArchive \
           -archivePath archive_path.xcarchive \
+          -exportOptionsPlist export_options.plist
           -exportPath export_path
         
     - name: Create app bundle
