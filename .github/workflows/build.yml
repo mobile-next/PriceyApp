@@ -53,10 +53,8 @@ jobs:
 
         security default-keychain -s build.keychain
 
-    - name: Build app
+    - name: Archive app
       run: |
-        echo $EXPORT_OPTIONS_PLIST > export_options.plist
-
         xcodebuild \
           DEVELOPMENT_TEAM="6TMG4Q64WM" \
           CODE_SIGN_IDENTITY="Developer ID Application: Goose Wrappers UG (haftungsbeschrankt)" \
@@ -64,6 +62,9 @@ jobs:
           -archivePath archive_path.xcarchive \
           archive
 
+    - name: Export archive
+      run: |
+        echo $EXPORT_OPTIONS_PLIST > export_options.plist
         xcodebuild \
           DEVELOPMENT_TEAM="6TMG4Q64WM" \
           CODE_SIGN_IDENTITY="Developer ID Application: Goose Wrappers UG (haftungsbeschrankt)" \
