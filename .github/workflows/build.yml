@@ -27,7 +27,7 @@ jobs:
         DEVELOPER_ID_APPLICATION_CERT: ${{ secrets.DEVELOPER_ID_APPLICATION_CERT }}
         DEVELOPER_ID_APPLICATION_PASSWORD: ${{ secrets.DEVELOPER_ID_APPLICATION_PASSWORD }}
         PROVISIONING_PROFILE: ${{ secrets.PROVISIONING_PROFILE }}
-        EXPORT_OPTIONS_PLIST: ${{ env.EXPORT_OPTIONS_PLIST }}
+        EXPORT_OPTIONS_PLIST: ${{ vars.EXPORT_OPTIONS_PLIST }}
       run: |
         # Create keychain
         security create-keychain -p "" build.keychain
