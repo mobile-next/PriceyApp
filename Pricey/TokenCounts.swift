@@ -26,9 +26,10 @@ struct UsageStat {
 	let linesAdded: Int64
 	let linesRemoved: Int64
 	let userPrompts: Int64
+	let timeWaitedForPrompt: Int64
 	let modelUsage: [String: ModelUsage]
 	
-	static let zero = UsageStat(inputTokens: 0, outputTokens: 0, cacheCreationTokens: 0, cacheReadTokens: 0, linesAdded: 0, linesRemoved: 0, userPrompts: 0, modelUsage: [:])
+	static let zero = UsageStat(inputTokens: 0, outputTokens: 0, cacheCreationTokens: 0, cacheReadTokens: 0, linesAdded: 0, linesRemoved: 0, userPrompts: 0, timeWaitedForPrompt: 0, modelUsage: [:])
 	
 	static func +(lhs: UsageStat, rhs: UsageStat) -> UsageStat {
 		var combinedModelUsage = lhs.modelUsage
@@ -44,6 +45,7 @@ struct UsageStat {
 			linesAdded: lhs.linesAdded + rhs.linesAdded,
 			linesRemoved: lhs.linesRemoved + rhs.linesRemoved,
 			userPrompts: lhs.userPrompts + rhs.userPrompts,
+			timeWaitedForPrompt: lhs.timeWaitedForPrompt + rhs.timeWaitedForPrompt,
 			modelUsage: combinedModelUsage
 		)
 	}
