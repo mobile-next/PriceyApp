@@ -1,4 +1,4 @@
-# Pricey 💰
+# Pricey 🤑
 
 <div align="center">
   <img src="https://img.shields.io/badge/macOS-14.0+-blue.svg" alt="macOS 14.0+">
@@ -6,7 +6,14 @@
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="MIT License">
 </div>
 
-**Pricey** is a macOS status bar app that tracks your Claude Code AI usage costs in real-time and compares them to human developer costs. See exactly how your AI expenses stack up against traditional development - because spending $5 on AI that saves 2 hours of developer time is a bargain! 🤖💰
+**Pricey 🤑** is a macOS status bar app that tracks your Claude Code AI usage costs in real-time and compares them to human developer costs. See exactly how your AI expenses stack up against traditional development - because spending $5 on AI that saves 2 hours of developer time is a bargain! 🤖💰
+
+<h4 align="center">
+<img width="731" height="546" alt="image" src="https://github.com/user-attachments/assets/5ad86d1c-0393-4cf6-86cd-d2088015af32" />
+
+
+
+
 
 ## Features
 
@@ -16,6 +23,17 @@
 - 🎯 **Model-specific pricing** - Accurate costs for different Claude models
 - 🔄 **Auto-refresh** - Automatically updates on code changes
 - ⚡ **Lightweight** - Minimal resource usage, lives quietly in your menu bar
+
+
+
+https://github.com/user-attachments/assets/f3371628-d2a8-4e55-bedd-e68c75361df8
+
+## What's next? 🚀
+
+Adding support for the following CLI vibe code tools:
+- Gemini CLI
+- Amazon Q
+- OpenAI Codex
 
 ## Getting Started
 
@@ -32,6 +50,12 @@
 4. **Grant permissions** - Allow file access when prompted
 
 The app will automatically start tracking your Claude usage and display costs in your menu bar.
+
+
+
+https://github.com/user-attachments/assets/9fabddcf-1b5a-4c6a-85f4-91b6ea899bff
+
+
 
 ## How It Works
 
