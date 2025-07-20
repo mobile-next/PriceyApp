@@ -12,9 +12,6 @@
 <img width="731" height="546" alt="image" src="https://github.com/user-attachments/assets/5ad86d1c-0393-4cf6-86cd-d2088015af32" />
 
 
-
-
-
 ## Features
 
 - 💰 **Real-time cost tracking** - See your Claude costs live in your menu bar
