@@ -1,4 +1,4 @@
-# Pricey 🤑
+# Pricey 🤑 - Track Claude Code cost and usage
 
 <div align="center">
   <img src="https://img.shields.io/badge/macOS-14.0+-blue.svg" alt="macOS 14.0+">
