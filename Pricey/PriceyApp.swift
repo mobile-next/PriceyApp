@@ -119,6 +119,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 				
 		// Create attributed string for line change statistics
 		let lineStatsString = NSMutableAttributedString()
+        lineStatsString.append(NSAttributedString("🧠 Lines changed: "))
+        
 		let linesAddedFormatted = PriceyApp.numberFormatter.string(from: NSNumber(value: totalUsageStat.linesAdded)) ?? "0"
 		let linesRemovedFormatted = PriceyApp.numberFormatter.string(from: NSNumber(value: totalUsageStat.linesRemoved)) ?? "0"
 		
@@ -130,9 +132,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 			.foregroundColor: NSColor(red: 0xD1/255.0, green: 0x24/255.0, blue: 0x2F/255.0, alpha: 1.0)
 		]))
 				
-		lineStatsString.append(NSAttributedString(string: " lines", attributes: [
-			.foregroundColor: NSColor.labelColor
-		]))
+//		lineStatsString.append(NSAttributedString(string: " lines", attributes: [
+//			.foregroundColor: NSColor.labelColor
+//		]))
 		
 		let lineStatsItem = NSMenuItem()
 		lineStatsItem.attributedTitle = lineStatsString
@@ -140,6 +142,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		
 		// menu.addItem(claudeItem)
 		menu.addItem(lineStatsItem)
+		
+		// Add prompt count
+		let promptsFormatted = PriceyApp.numberFormatter.string(from: NSNumber(value: totalUsageStat.userPrompts)) ?? "0"
+		let promptsItem = NSMenuItem(title: "💬 Prompts: \(promptsFormatted)", action: #selector(emptyCallback), keyEquivalent: "")
+		menu.addItem(promptsItem)
+		
+		// Add vibe time
+		let totalMinutes = Int(totalUsageStat.timeWaitedForPrompt / 60)
+		let minutes = totalMinutes % 60
+		let hours = totalMinutes / 60
+		let vibeItem = NSMenuItem(title: String(format: "⏱️ Vibed for %02d:%02d minutes", hours, minutes), action: #selector(emptyCallback), keyEquivalent: "")
+		menu.addItem(vibeItem)
 		
 		// Calculate and add human salary item
 		let humanSalary = calculateHumanSalary(totalUsageStat: totalUsageStat)
@@ -149,7 +163,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		salaryFormatter.currencyCode = "USD"
 		salaryFormatter.maximumFractionDigits = 0
 		let humanSalaryFormatted = salaryFormatter.string(from: NSNumber(value: humanSalaryCeiled)) ?? "$0"
-		let humanSalaryItem = NSMenuItem(title: "Saved \(humanSalaryFormatted) in Salary", action: #selector(emptyCallback), keyEquivalent: "")
+		let humanSalaryItem = NSMenuItem(title: "🤑 Saved \(humanSalaryFormatted) in Salary", action: #selector(emptyCallback), keyEquivalent: "")
 		humanSalaryItem.target = self
 		menu.addItem(humanSalaryItem)
 		
@@ -251,6 +265,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		}
 		
 		var usageStat = UsageStat.zero
+		var uuidTimestamps: [String: Date] = [:]
 		// print("Reading file: \(filePath)")
 		
 		let dateFormatter = DateFormatter()
@@ -278,6 +293,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 							   let timestamp = dateFormatter.date(from: timestampString),
 							   timestamp >= timestampThreshold {
 								
+								// Store UUID and timestamp for tracking
+								if let uuid = json["uuid"] as? String {
+									uuidTimestamps[uuid] = timestamp
+								}
+								
 								// Parse token usage data
 								var inputTokens: Int64 = 0
 								var outputTokens: Int64 = 0
@@ -285,6 +305,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 								var cacheReadTokens: Int64 = 0
 								var linesAdded: Int64 = 0
 								var linesRemoved: Int64 = 0
+								var userPrompts: Int64 = 0
+								var timeWaitedForPrompt: Int64 = 0
 								
 								var modelName = ""
 								if let message = json["message"] as? [String: Any],
@@ -294,6 +316,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 									cacheCreationTokens = Int64(usage["cache_creation_input_tokens"] as? Int ?? 0)
 									cacheReadTokens = Int64(usage["cache_read_input_tokens"] as? Int ?? 0)
 									modelName = message["model"] as? String ?? ""
+								}
+								
+								// Count user prompts and calculate wait time
+								if let type = json["type"] as? String,
+								   type == "user",
+								   let message = json["message"] as? [String: Any],
+								   let role = message["role"] as? String,
+								   role == "user",
+								   let _ = message["content"] as? String {
+									userPrompts += 1
+									
+									// Calculate wait time if parentUuid exists
+									if let parentUuid = json["parentUuid"] as? String,
+									   let parentTimestamp = uuidTimestamps[parentUuid],
+									   let timestampString = json["timestamp"] as? String,
+									   let userTimestamp = dateFormatter.date(from: timestampString) {
+										let waitTime = Int64(userTimestamp.timeIntervalSince(parentTimestamp))
+										timeWaitedForPrompt += waitTime
+									}
 								}
 								
 								// Parse toolUseResult.structuredPatch data
@@ -335,6 +376,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 									cacheReadTokens: cacheReadTokens,
 									linesAdded: linesAdded,
 									linesRemoved: linesRemoved,
+									userPrompts: userPrompts,
+									timeWaitedForPrompt: timeWaitedForPrompt,
 									modelUsage: modelName.isEmpty ? [:] : [modelName: modelUsageForThisRequest]
 								)
 								
