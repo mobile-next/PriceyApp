@@ -97,12 +97,22 @@ jobs:
         ls -l AuthKey.p8
         xcrun notarytool submit Pricey-darwin-arm64.zip --key AuthKey.p8 --key-id $NOTARY_KEY_ID --issuer $NOTARY_ISSUER --wait
         rm -f AuthKey.p8
+
+    - name: Make dmg distribution
+      run: |
+        cd dmg
+        unzip ../Pricey-darwin-arm64.zip
+        ln -sf /Applications Applications
+        cd ..
+        hdiutil create -volname "PriceyApp" -srcfolder dmg -ov -format UDZO Pricey-darwin-arm64.dmg
         
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: Pricey-darwin-arm64
-        path: Pricey-darwin-arm64.zip
+        path: |
+          Pricey-darwin-arm64.zip
+          Pricey-darwin-arm64.dmg
 
     - name: Upload release
       if: github.ref_type == 'tag'
@@ -113,4 +123,5 @@ jobs:
         name: Version ${{ github.ref_name }}
         files: |
           Pricey-darwin-arm64.zip
+          Pricey-darwin-arm64.dmg
 
