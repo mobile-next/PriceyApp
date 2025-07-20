@@ -137,9 +137,6 @@ Yes! Pricey only reads local files and never sends data anywhere. All processing
 
 Pricey reads Claude's local project files to calculate token usage and costs. This is read-only access to your `~/.claude/projects` directory.
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
